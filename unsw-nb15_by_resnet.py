@@ -68,10 +68,8 @@ batch_size = 256
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-resnet_model = nn.Sequential(b1, b2, b3, b4, b5, b6,
-                    nn.AdaptiveAvgPool1d((1)),
+resnet_model = ResNet(label_num)
 
-                    nn.Flatten(), nn.Linear(1024, label_num))
 epochs = 40
 lr = 1e-4 
 momentum = 0.9
@@ -88,7 +86,7 @@ resnet_model.to(device=device)
 
 
 timestamp = datetime.fromtimestamp(time.time()).strftime('%Y%m%d_%H%M%S_')
-old_model_name = 'resnet_model.pth'
+old_model_name = ''
 new_model_name = timestamp + 'resnet_model.pth'
 
 if old_model_name != '':

@@ -109,9 +109,7 @@ batch_size = 256
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
-resnet_model = nn.Sequential(b1, b2, b3, b4, b5, b6,
-                    nn.AdaptiveAvgPool1d((1)),
-                    nn.Flatten(), nn.Linear(1024, label_num))
+resnet_model = ResNet(label_num)
 
 epochs = 40
 lr = 1e-4 

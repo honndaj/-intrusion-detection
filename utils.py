@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import ConfusionMatrixDisplay
 
 class LoadData(Dataset):
     def __init__(self, X, y):
@@ -84,16 +86,18 @@ def test(test_data, batch_size, device, model, loss_fn):
     avg_loss = loss_sum / iter
     print("Accuracy:", acc)
     print("Average Loss:", avg_loss)
+    return acc, avg_loss
 
-def test_per_class(test_data, batch_size, device, model, loss_fn):
+
+def confusion_matrix_per_class_acc(test_data, batch_size, device, model, class_labels):
     """
-    ，以及每一个类别的准确率
+    混淆矩阵和每一个类别的准确率
     """
-    positive = 0
-    negative = 0
     test_dataloader = DataLoader(test_data, batch_size=batch_size)
     per_class_sum = [0 for i in range(10)]
     per_class_true = [0 for i in range(10)]
+    y_true_list = []
+    y_pred_list = []
     with torch.no_grad():
         iter = 0
         loss_sum = 0
@@ -101,24 +105,22 @@ def test_per_class(test_data, batch_size, device, model, loss_fn):
             X, y = X.to(device).to(torch.float32), y.to(device).to(torch.float32)
             X = X.reshape(X.shape[0], 1, X.shape[1])
             y_pred = model(X)
-            # print(f"y_pred: {y_pred.shape}, y: {y.shape}")
-            loss = loss_fn(y_pred, y.long())
-            loss_sum += loss.item()
             iter += 1
             for item in zip(y_pred, y):
                 per_class_sum[int(item[1])] += 1
+                y_true_list.append(int(item[1]))
+                y_pred_list.append(int(torch.argmax(item[0])))
                 if torch.argmax(item[0]) == item[1]:
-                    positive += 1
                     per_class_true[int(item[1])] += 1
-                else:
-                    negative += 1
-    acc = positive / (positive + negative)
-    avg_loss = loss_sum / iter
-    print("Accuracy:", acc)
-    print("Average Loss:", avg_loss)
     for i in range(10) :
-       print(f"class:{i}\t{per_class_true[i] / per_class_sum[i]}") 
-
+       print(f"class:{class_labels[i]}\t{per_class_true[i] / per_class_sum[i]}")
+    
+    cm = confusion_matrix(y_true_list, y_pred_list)# 混淆矩阵
+    ConfusionMatrixDisplay.from_predictions(y_true_list, y_pred_list, display_labels=class_labels, cmap=plt.cm.Reds, colorbar=True)# 混淆矩阵图片
+    plt.xticks(rotation=45)
+    plt.title("Confusion Matrix")
+    
+    
 def loss_value_plot(losses, iter):
     plt.figure()
     plt.plot([i for i in range(1, iter+1)], losses)

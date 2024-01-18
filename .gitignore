@@ -3,3 +3,5 @@
 /-/kdd99
 /-/UNSW-NB15
 /kdd99
+/net/__pycache__
+/losses.pkl

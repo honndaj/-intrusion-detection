@@ -51,13 +51,38 @@ def resnet_block(input_channels, num_channels, num_residuals,
             blk.append(Residual(num_channels, num_channels))
     return blk
 
-b1 = nn.Sequential(nn.Conv1d(1, 64, kernel_size=7, stride=2, padding=3),
-                   nn.BatchNorm1d(64), nn.ReLU(),
-                   nn.MaxPool1d(kernel_size=3, stride=2, padding=1))
-b2 = nn.Sequential(*resnet_block(64, 64, 2, first_block=True))
-b3 = nn.Sequential(*resnet_block(64, 128, 2))
-b4 = nn.Sequential(*resnet_block(128, 256, 2))
-b5 = nn.Sequential(*resnet_block(256, 512, 2))
-b6 = nn.Sequential(*resnet_block(512, 1024, 2))
+class ResNet(nn.Module):
+    def __init__(self, label_num):
+        super(ResNet, self).__init__()
+
+        self.b1 = nn.Sequential(
+            nn.Conv1d(1, 64, kernel_size=7, stride=2, padding=3),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
+        )
+        self.b2 = nn.Sequential(*resnet_block(64, 64, 2, first_block=True))
+        self.b3 = nn.Sequential(*resnet_block(64, 128, 2))
+        self.b4 = nn.Sequential(*resnet_block(128, 256, 2))
+        self.b5 = nn.Sequential(*resnet_block(256, 512, 2))
+        self.b6 = nn.Sequential(*resnet_block(512, 1024, 2))
+
+        self.adaptive_pool = nn.AdaptiveAvgPool1d(1)
+        self.flatten = nn.Flatten()
+        self.fc = nn.Linear(1024, label_num)
+
+    def forward(self, X):
+        X = self.b1(X)
+        X = self.b2(X)
+        X = self.b3(X)
+        X = self.b4(X)
+        X = self.b5(X)
+        X = self.b6(X)
+
+        X = self.adaptive_pool(X)
+        X = self.flatten(X)
+        logits = self.fc(X)
+
+        return logits
 
 
